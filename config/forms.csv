@@ -1,0 +1,47 @@
+form_id,country,iso3,name,variant,language,token_env,min_date,enabled,submissions_on_ona,last_submission,note
+5211,Angola,AGO,ANG_FORMULAIRE A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,9,2020-12-08,vaccine in title: nOPV2
+10263,Angola,AGO,JNV ANG Formulario A para Vacinas Tipo 2,nOPV2,pt,ONA_API_TOKEN,2019-01-01,TRUE,121,2026-11-03,vaccine in title: nOPV2
+6375,Benin,BEN,BEN - VM Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,5480,2026-06-25,vaccine in title: nOPV2
+5653,Burkina Faso,BFA,VM - BFA Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,7491,2026-05-10,vaccine in title: nOPV2
+8917,Botswana,BWA,BOT Form _A_ for Type 2 vaccine,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,238,2026-06-29,vaccine in title: nOPV2
+5603,Central African Republic,CAF,RCA - VM - nVPO2 - Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,9065,2026-10-01,vaccine in title: nOPV2
+15587,Central African Republic,CAF,RCA - VM - bVPO - Formulaire A,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,297,2026-05-15,vaccine in title: bOPV
+5578,Cote d'Ivoire,CIV,VM - CIV Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,12195,2026-10-12,vaccine in title: nOPV2
+5577,Cameroon,CMR,CAE VM - Formulaire A pour le nOPV2,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,15059,2026-09-02,vaccine in title: nOPV2; CAE read as Cameroon (confirm)
+15010,Cameroon,CMR,CAE VM - Formulaire A pour le bOPV,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,1192,2026-03-16,vaccine in title: bOPV; CAE read as Cameroon (confirm)
+5645,Democratic Republic of the Congo,COD,RDC VM Formulaire A pour le nOPV2,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,38584,2026-11-22,vaccine in title: nOPV2
+14850,Democratic Republic of the Congo,COD,RDC VM Formulaire A pour le bOPV,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,13117,2026-11-21,vaccine in title: bOPV
+6396,Congo,COG,VM - Congo Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,326,2024-10-28,vaccine in title: nOPV2
+8581,Algeria,DZA,ALG Formulaire _A_ pour les Vaccins,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,341,2026-01-26,vaccine in title: nOPV2
+8097,Eritrea,ERI,ERI SIA Form A for Type2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,FALSE,0,,vaccine in title: nOPV2
+5316,Ethiopia,ETH,ETH Form _A_ for Type 2 vaccine,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,580,2023-01-11,vaccine in title: nOPV2
+6833,Ethiopia,ETH,ETH nOPV2 Form _A_ for Type 2 vaccine,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,1471,2023-11-20,vaccine in title: nOPV2
+11612,Ethiopia,ETH,ETH Form A for Type 2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,193,2026-11-23,vaccine in title: nOPV2
+12813,Ethiopia,ETH,ETH RRT Form A for Type 2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,2859,2026-11-23,vaccine in title: nOPV2
+5244,Ghana,GHA,GHA - VM Form A,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,3093,2026-07-08,vaccine in title: nOPV2
+5305,Guinea,GIN,GUI Formulaire _A_ pour les Vaccins de Type 2,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,867,2020-10-13,vaccine in title: nOPV2
+5655,Guinea,GIN,GUI - VM Formulaire A pour le nOPV2,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,4567,2026-06-28,vaccine in title: nOPV2
+15956,Guinea,GIN,GUI - VM Formulaire A pour le bOPV,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,361,2026-07-07,vaccine in title: bOPV
+7108,Gambia,GMB,GAM VM - Form A,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,380,2024-12-23,vaccine in title: nOPV2
+7656,Guinea-Bissau,GNB,GNB Formulário A para Vacinas Tipo 2,nOPV2,pt,ONA_API_TOKEN,2019-01-01,TRUE,332,2022-07-04,vaccine in title: nOPV2
+6417,Kenya,KEN,KEN SIA Form A for Type2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,1947,2025-04-16,vaccine in title: nOPV2
+6200,Liberia,LBR,LIB VM Form A,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,700,2025-10-15,vaccine in title: nOPV2
+16756,Madagascar,MDG,MDG - VM - Formulaire A bOPV,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,561,2026-11-23,vaccine in title: bOPV
+5639,Mali,MLI,MAL - VM Form A,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,2544,2026-11-13,vaccine in title: nOPV2; MAL read as Mali (confirm)
+7765,Mozambique,MOZ,JNV MOZ Formulário A para Vacinas Tipo 2,nOPV2,pt,ONA_API_TOKEN,2019-01-01,TRUE,199,2026-06-21,vaccine in title: nOPV2
+6426,Mauritania,MRT,MAU VM Formulaire  A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,290,2024-06-24,vaccine in title: nOPV2
+15789,Namibia,NAM,NAM Form A for Type 2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,137,2026-06-01,vaccine in title: nOPV2
+5582,Niger,NER,NIG - VM - nVPO2 - Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,15433,2026-09-09,vaccine in title: nOPV2
+15590,Niger,NER,NIG - VM - bVPO - Formulaire A,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,14,2026-01-18,vaccine in title: bOPV
+9788,Rwanda,RWA,RWA Form _A_ for Type 2 vaccine,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,114,2023-09-20,vaccine in title: nOPV2
+6354,Senegal,SEN,SEN Formulaire _A_ pour les Vaccins,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,395,2022-03-25,vaccine in title: nOPV2
+6470,Sierra Leone,SLE,SIL VM Form A,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,1565,2025-10-29,vaccine in title: nOPV2
+5778,South Sudan,SSD,SSUD Form A for Type 2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,43,2025-02-06,vaccine in title: nOPV2
+5601,Chad,TCD,Tchad VM - Formulaire A pour le nOPV2,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,8100,2026-11-19,vaccine in title: nOPV2
+15135,Chad,TCD,Tchad VM - Form A pour le bOPV,bOPV,fr,ONA_API_TOKEN,2019-01-01,TRUE,1074,2026-02-23,vaccine in title: bOPV
+5242,Togo,TGO,TOG Formulaire _A_ pour les Vaccins de Type 2,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,89,2020-10-02,vaccine in title: nOPV2
+5599,Togo,TGO,VM - Togo Formulaire A,nOPV2,fr,ONA_API_TOKEN,2019-01-01,TRUE,4375,2026-06-14,vaccine in title: nOPV2
+9937,Tanzania,TZA,TNZ Form A for Vaccine Type 2,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,8049,2026-11-07,vaccine in title: nOPV2
+6766,Uganda,UGA,UGA SIA Form A for Type2 Vaccines,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,1759,2025-06-02,vaccine in title: nOPV2
+9165,Zambia,ZMB,ZAMBIA Form _A_ for Type 2 vaccine,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,3705,2026-07-31,vaccine in title: nOPV2
+11165,Zimbabwe,ZWE,ZIM Form A for Vaccine Type 2,nOPV2,en,ONA_API_TOKEN,2019-01-01,TRUE,1247,2026-08-31,vaccine in title: nOPV2
