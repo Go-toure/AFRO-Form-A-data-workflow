@@ -33,7 +33,8 @@ Puts the 45 country forms (three versions of the form: `vials`, `daily`, `bottle
 - Questions are mapped to one standard name per figure (vials received, distributed, back from the lower level, physical stock, children vaccinated ...).
 - Level of the report: National, Regional, District, Facility (sub-district and ward count as Facility). Names are kept as reported; a flag says when names below the level are filled.
 - Campaign and round follow `data/lookup/campaign_lookup.xlsx` (the GPEI campaign lookup, copy of the admin data lookup): the typed name is matched to the lookup's OBR Name; when it is empty or not a campaign name it is found from country, vaccine and report date. The typed name is kept in `response_reported`.
-- Repeated submissions of the same place, campaign, round and level within 75 days: the latest is kept. Further apart = another round, kept.
+- The form says: one report per round and per health structure; if more are sent, only the last one counts. The repository keeps every submission (only exact duplicates are removed, listed in `data/final/afro_form_a_repository_removed_repeats.csv`); `is_latest_of_place` marks the last report of each place and round, `repeats_of_this_place` counts them. The summary tables use only the last report of each place; the `*_all_reports` columns add up every report, for comparison.
+- Dates: the date typed in the form is used unless it is impossible (before 2019, after the submission, more than a year before it). The typed date is always kept in `date_typed`; `date_source` says which one `report_date` is.
 - Unaccounted vials, doses used, wastage rate and the theoretical stock are recomputed with one formula for every country.
 - Names and phone numbers of people are not kept. `qc_flags` lists the checks a report fails; `reports/qc_summary.json` counts them.
 

@@ -12,7 +12,7 @@ What it does
   2  gives each question one standard name (the three versions of the form: "vials", "daily" and "bottles", see FIGURES)
   3  cleans text, numbers, dates, the level of the report, the round (Rnd1, Rnd2 ...) and the campaign name
      (the lookup is the authority: Response = OBR Name, round = the lookup's round, as in the admin data)
-  4  removes repeated submissions (same place, campaign, round and level within 75 days: the latest is kept)
+  4  removes exact duplicates only (all other repeats are kept, with is_latest_of_place)
   5  recomputes the stock arithmetic of the form the same way for every country (unaccounted vials, doses used, wastage, theoretical stock)
   6  flags what looks wrong (qc_flags) and writes the repository, two summary tables, the quality summary and the dictionary
 
@@ -164,6 +164,24 @@ def ckey(s):
     return COUNTRY_ALIAS.get(k, k)
 
 
+def read_aliases():
+    """config/campaign_aliases.csv (iso3, typed_name, lookup_name): a typed campaign name that is not in the lookup, mapped by hand to the lookup's OBR Name."""
+    p = HERE / "config" / "campaign_aliases.csv"
+    if not p.exists():
+        return {}
+    a = pd.read_csv(p, dtype=str, encoding="utf-8-sig").fillna("")
+    return {(r.iso3.strip().upper(), key(r.typed_name)): r.lookup_name.strip() for r in a.itertuples() if r.typed_name.strip() and r.lookup_name.strip()}
+
+
+def apply_aliases(df):
+    al = read_aliases()
+    if not al:
+        return
+    m = pd.Series([al.get((i, key(r))) for i, r in zip(df["iso3"], df["response"])], index=df.index)
+    df.loc[m.notna(), "response"] = m[m.notna()]
+    log(f"campaign aliases applied: {int(m.notna().sum()):,} rows")
+
+
 def read_lookup():
     for p in LOOKUP_CANDIDATES:
         if p.exists():
@@ -234,6 +252,7 @@ def clean(df, lk):
     sub_d = df["submission_time"].dt.tz_convert(None).dt.normalize()
     cand = df["_form_date"].fillna(df["_today"])
     ok = cand.notna() & (cand >= df["min_date"]) & (cand <= sub_d + pd.Timedelta(days=1)) & (cand >= sub_d - pd.Timedelta(days=366))
+    df["date_typed"] = cand
     df["report_date"] = cand.where(ok, sub_d)
     df["date_source"] = np.where(ok, "form", "submission")
     flags["date_from_submission"] = ~ok
@@ -263,6 +282,7 @@ def clean(df, lk):
     if lk is not None:
         L = lk.copy()
         names = {k: g.iloc[0]["OBR Name"] for k, g in L.groupby(["_ck", "_rk"])}
+        apply_aliases(df)
         ck = df["country"].map(ckey)
         rk = df["response"].map(key)
         std = pd.Series([names.get((c, r), "") for c, r in zip(ck, rk)], index=df.index)
@@ -344,17 +364,24 @@ def dedupe(df):
     df = df.sort_values("submission_time")
     n0 = len(df)
     df["repeats_of_this_place"] = df.groupby("_k")["_k"].transform("size")
-    df = df.drop_duplicates("_k", keep="last").drop(columns="_k")
-    return df.sort_values(["iso3", "report_date"]).reset_index(drop=True), n0 - len(df)
+    df["is_latest_of_place"] = ~df.duplicated("_k", keep="last")
+    # Only EXACT duplicates are removed (same place, campaign, round, date and every figure identical). Different figures from the same place are
+    # different reports (another team, another day, a partial report): they are all kept; is_latest_of_place marks the last one of each place.
+    sig = df["_k"] + "|" + df["report_date"].astype(str) + "|" + df[list(FIGURES)].astype(str).agg("|".join, axis=1)
+    keep = df.loc[~sig.duplicated(keep="last")]
+    kept_id = pd.Series(keep["record_uuid"].values, index=sig.loc[keep.index].values)
+    removed = df.loc[~df.index.isin(keep.index)].copy()
+    removed["kept_record_uuid"] = sig.loc[removed.index].map(kept_id)
+    return keep.drop(columns="_k").sort_values(["iso3", "report_date"]).reset_index(drop=True), n0 - len(keep), removed.drop(columns="_k")
 
 
 # ------------------------------------------------------------------------------------------------ outputs
 REPO_COLS = ["record_uuid", "iso3", "country", "form_id", "template", "vaccine", "language", "response", "response_reported", "round", "campaign_start", "campaign_source",
-             "report_date", "report_year", "date_source", "submission_time", "level", "region", "district", "facility", "latitude", "longitude",
+             "report_date", "date_typed", "report_year", "date_source", "submission_time", "level", "region", "district", "facility", "latitude", "longitude",
              "target_population", "doses_per_vial", "vials_start_stock", "vials_received", "vials_replenished", "vials_transferred", "vials_distributed",
              "usable_back_from_lower", "unusable_back_from_lower", "usable_returned_higher", "unusable_returned_higher", "usable_physical",
              "unusable_physical", "unusable_disposed", "children_vaccinated", "unaccounted_vials", "doses_used", "wastage_rate", "form_wastage_rate",
-             "usable_theoretical", "physical_vs_theoretical", "reverse_logistics_on_time", "repeats_of_this_place", "qc_flags", "vam_comments"]
+             "usable_theoretical", "physical_vs_theoretical", "reverse_logistics_on_time", "repeats_of_this_place", "is_latest_of_place", "qc_flags", "vam_comments"]
 
 
 def summaries(df):
@@ -370,10 +397,20 @@ def summaries(df):
         for c in ("first_report", "last_report"):
             a[c] = a[c].dt.strftime("%Y-%m-%d")
         return a
-    country = agg(base, ["iso3", "country", "response", "round", "level"])
+    # The form's instruction: one form per round and per health structure, "if you submit more than one, only the last one will be considered".
+    # The summaries therefore use the last report of each place; the "_all_reports" columns add up every report kept in the repository, for comparison.
+    latest = base[base["is_latest_of_place"]]
+    def with_all(a, by):
+        al = base.groupby(by, dropna=False).agg(reports_all=("record_uuid", "size"), vials_distributed_all_reports=("vials_distributed", lambda x: x.sum(min_count=1)),
+                                                children_vaccinated_all_reports=("children_vaccinated", lambda x: x.sum(min_count=1))).reset_index()
+        return a.merge(al, on=by, how="left")
+    country = with_all(agg(latest, ["iso3", "country", "response", "round", "level"]), ["iso3", "country", "response", "round", "level"])
     country["level"] = pd.Categorical(country["level"], LEVEL_ORDER, ordered=True)
     country = country.sort_values(["iso3", "response", "round", "level"]).reset_index(drop=True)
-    district = agg(base[base["level"] == "Facility"], ["iso3", "country", "response", "round", "region", "district"])
+    dby = ["iso3", "country", "response", "round", "region", "district"]
+    base = base[base["level"] == "Facility"]
+    latest = latest[latest["level"] == "Facility"]
+    district = with_all(agg(latest, dby), dby)
     return country, district
 
 
@@ -384,7 +421,7 @@ def dictionary(df, forms):
         "vaccine": "Vaccine of the form (nOPV2 or bOPV), from the form title", "language": "Language of the form (en, fr, pt)",
         "response": "Campaign name: the OBR Name of the lookup (matched on the typed name, or on country + vaccine + report date when the typed name is empty or not a campaign name); a typed campaign name that is not in the lookup is kept as typed", "response_reported": "Campaign name as typed in the form", "round": "Round (Rnd1, Rnd2 ...), the lookup's round number when the campaign is in the lookup",
         "campaign_start": "Start date of the round (lookup; else the date reported in the form)", "campaign_source": "reported / lookup_name (name matched to the lookup) / lookup_date (campaign found from the report date)",
-        "report_date": "Date of the report: the date typed in the form if plausible, else the submission date", "report_year": "Year of report_date",
+        "report_date": "Date of the report: the date typed in the form if plausible, else the submission date", "date_typed": "The date typed in the form, as it was (also when it was rejected as implausible: before min_date, after the submission, more than 366 days before it)", "report_year": "Year of report_date",
         "date_source": "form or submission", "submission_time": "Time the submission reached ONA (UTC)",
         "level": "Level of the report: National, Regional, District, Facility (health facility / sub-district)", "region": "Region (capitals)",
         "district": "District (capitals)", "facility": "Health facility / sub-district (capitals)", "latitude": "GPS latitude of the report", "longitude": "GPS longitude of the report",
@@ -399,7 +436,7 @@ def dictionary(df, forms):
         "wastage_rate": "(doses_used - children_vaccinated) / doses_used x 100, recomputed the same way for every country", "form_wastage_rate": "Wastage rate the form itself calculated (for comparison)",
         "usable_theoretical": "vials_start_stock + vials_received + vials_replenished + usable_back_from_lower - vials_distributed - vials_transferred",
         "physical_vs_theoretical": "usable_theoretical - usable_physical (0 = the stock matches)", "reverse_logistics_on_time": "Were the reports and vials sent to the upper level on time (Yes / No / NA)",
-        "repeats_of_this_place": "How many submissions the same place, campaign, round and level had within 75 days (the latest is kept)", "qc_flags": "Semicolon list of checks that failed", "vam_comments": "Free-text comment of the vaccine accountability monitor",
+        "repeats_of_this_place": "How many submissions the same place, campaign, round and level had within 75 days of each other", "is_latest_of_place": "True for the last submission of that place and round. The form says one report per round and per health structure and only the last one is considered: the summary tables use these reports", "qc_flags": "Semicolon list of checks that failed", "vam_comments": "Free-text comment of the vaccine accountability monitor",
     }
     flags = {"implausible_number": "A figure is negative or above 5,000,000: set to empty", "doses_per_vial_odd": "doses_per_vial not 1, 2, 5, 10, 20, 25, 50 or 100: set to empty (doses used and wastage are then empty)",
              "round_not_a_round": "The round question holds something that is not a round number (a campaign name, a date)", "date_from_submission": "The date typed in the form is missing or implausible: submission date used",
@@ -412,7 +449,7 @@ def dictionary(df, forms):
     fm = forms[["form_id", "country", "iso3", "name", "variant", "language", "enabled", "submissions_on_ona", "last_submission", "note"]].copy()
     rules = pd.DataFrame({"Rule": [
         "One record = one report of one place (national, regional, district or facility) for one round.",
-        "Repeated submissions of the same place, campaign, round and level within 75 days of each other: the latest is kept (repeats_of_this_place says how many). Reports of the same place more than 75 days apart are kept as separate reports (another round under the same name).",
+        "Only exact duplicates are removed (same place, campaign, round, date and every figure identical; listed in afro_form_a_repository_removed_repeats.csv). Several submissions of the same place with different figures are all kept (another team, another day): repeats_of_this_place counts them and is_latest_of_place marks the last one. The form\u2019s own instruction is one report per round and per health structure, the last one counts: the summary tables use only the last report of each place (is_latest_of_place) and give the sum over every report in the *_all_reports columns.",
         "Reports of different levels are never added together in the repository. afro_form_a_country_round.csv groups by level; afro_form_a_district_round.csv adds only facility-level reports.",
         "Questions of the three versions of the form (vials, daily, bottles) are mapped to the same column (see process_form_a.py, FIGURES).",
         "Place names: capitals, underscores and extra spaces removed. No other correction of names is made.",
@@ -447,7 +484,7 @@ def main():
     n_raw = len(df)
     log(f"{n_raw:,} submissions from {len(parts)} forms")
     df, flags = clean(df, lk)
-    df, n_rep = dedupe(df)
+    df, n_rep, removed = dedupe(df)
     log(f"{n_rep:,} repeated submissions removed -> {len(df):,} reports")
     for c in REPO_COLS:
         if c not in df.columns:
@@ -460,6 +497,12 @@ def main():
     META.mkdir(parents=True, exist_ok=True)
     REP.mkdir(exist_ok=True)
     out.to_csv(FINAL / "afro_form_a_repository.csv", index=False, encoding="utf-8-sig")
+    rcols = ["record_uuid", "kept_record_uuid", "iso3", "form_id", "response", "round", "level", "region", "district", "facility", "report_date", "submission_time",
+             "vials_received", "vials_distributed", "usable_back_from_lower", "children_vaccinated"]
+    rm = removed[rcols].copy()
+    rm["report_date"] = pd.to_datetime(rm["report_date"], errors="coerce").dt.strftime("%Y-%m-%d")
+    rm["submission_time"] = pd.to_datetime(rm["submission_time"], errors="coerce", utc=True).dt.strftime("%Y-%m-%d %H:%M:%S")
+    rm.to_csv(FINAL / "afro_form_a_repository_removed_repeats.csv", index=False, encoding="utf-8-sig")
     country, district = summaries(df)
     country.to_csv(FINAL / "afro_form_a_country_round.csv", index=False, encoding="utf-8-sig")
     district.to_csv(FINAL / "afro_form_a_district_round.csv", index=False, encoding="utf-8-sig")
@@ -469,7 +512,7 @@ def main():
     fl = fl[fl != ""].value_counts()
     unmatched = df[df["qc_flags"].str.contains("campaign_not_in_lookup")].groupby(["iso3", "response"]).size().rename("reports").reset_index()
     unmatched.to_csv(REP / "form_a_unmatched_campaigns.csv", index=False, encoding="utf-8-sig")
-    qc = {"built": datetime.now().isoformat(timespec="seconds"), "submissions_read": int(n_raw), "repeats_removed": int(n_rep), "reports": int(len(df)),
+    qc = {"built": datetime.now().isoformat(timespec="seconds"), "submissions_read": int(n_raw), "repeats_removed": int(n_rep), "removed_repeats_listed": int(len(removed)), "dates_rejected": int((df["date_source"] == "submission").sum()), "reports": int(len(df)),
           "by_level": df["level"].value_counts().to_dict(), "by_template": df["template"].value_counts().to_dict(), "flags": {k: int(v) for k, v in fl.items()},
           "reports_without_campaign": int((df["response"] == "").sum()), "reports_without_round": int((df["round"] == "").sum()),
           "countries": int(df["iso3"].nunique())}
